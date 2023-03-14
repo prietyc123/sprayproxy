@@ -53,6 +53,7 @@ spec:
                 #!/usr/bin/env bash
                 cd $(workspaces.source.path)
                 go test ./...
+                echo "hello"
           workspaces:
             - name: source
   workspaces:
