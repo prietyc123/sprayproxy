@@ -1,6 +1,5 @@
 /*
 Copyright © 2023 The Spray Proxy Contributors
-
 SPDX-License-Identifier: Apache-2.0
 */
 package proxy
@@ -19,26 +18,61 @@ import (
 	"github.com/redhat-appstudio/sprayproxy/pkg/metrics"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"golang.org/x/exp/slices"
 )
 
-type BackendsFunc func() []string
+type backend struct {
+	URL string `form:"url"`
+}
+
+//type BackendsFunc func() []string
 
 type SprayProxy struct {
-	backends    BackendsFunc
+	backends    []string
 	insecureTLS bool
 	logger      *zap.Logger
 }
 
 func NewSprayProxy(insecureTLS bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
-	backendFn := func() []string {
-		return backends
-	}
+	// backendFn := func() []string {
+	// 	return backends
+	// }
 
 	return &SprayProxy{
-		backends:    backendFn,
+		backends:    backends,
 		insecureTLS: insecureTLS,
 		logger:      logger,
 	}, nil
+}
+
+func (p *SprayProxy) RegisterBackends(c *gin.Context) {
+	var newUrl backend
+	if c.BindJSON(&newUrl) == nil {
+		p.logger.Info(newUrl.URL)
+	}
+	// p.backends = append(p.backends, c.Query("url"))
+	// c.String(http.StatusOK, "added new backend server", p.backends)
+	if !slices.Contains(p.backends, c.Query("url")) {
+		p.backends = append(p.backends, c.Query("url"))
+		c.String(http.StatusOK, "added new backend server", p.backends)
+		return
+	}
+	c.String(http.StatusFound, "backend server already registered", p.backends)
+}
+
+func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
+	var findUrl backend
+	if c.BindJSON(&findUrl) == nil {
+		p.logger.Info(findUrl.URL)
+	}
+	for i, backend := range p.backends {
+		if backend == c.Query("url") {
+			p.backends = append(p.backends[:i], p.backends[i+1:]...)
+			c.String(http.StatusOK, "unregistered the requested backend server", backend)
+			return
+		}
+	}
+	c.String(http.StatusNotFound, "backend server not found in the list", p.backends)
 }
 
 func (p *SprayProxy) HandleProxy(c *gin.Context) {
@@ -71,7 +105,7 @@ func (p *SprayProxy) HandleProxy(c *gin.Context) {
 		}
 	}
 
-	for _, backend := range p.backends() {
+	for _, backend := range p.backends {
 		backendURL, err := url.Parse(backend)
 		if err != nil {
 			p.logger.Error("failed to parse backend "+err.Error(), zapCommonFields...)
@@ -146,7 +180,7 @@ func (p *SprayProxy) HandleProxy(c *gin.Context) {
 }
 
 func (p *SprayProxy) Backends() []string {
-	return p.backends()
+	return p.backends
 }
 
 // InsecureSkipTLSVerify indicates if the proxy is skipping TLS verification.
