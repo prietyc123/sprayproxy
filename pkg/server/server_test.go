@@ -24,7 +24,7 @@ func TestServerRootPost(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString("hello"))
+	req, _ := http.NewRequest(http.MethodPost, "/proxy", bytes.NewBufferString("hello"))
 	server.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
