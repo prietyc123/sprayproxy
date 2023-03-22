@@ -1,11 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: metrics-proxy-rolebinding
+  name: api-proxy-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: metrics-proxy-role
+  name: api-proxy-role
 subjects:
   - kind: ServiceAccount
     name: sprayproxy
