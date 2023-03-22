@@ -1,6 +1,5 @@
 /*
 Copyright © 2023 The Spray Proxy Contributors
-
 SPDX-License-Identifier: Apache-2.0
 */
 package server
@@ -42,8 +41,12 @@ func NewServer(host string, port int, insecureSkipTLS bool, backends ...string) 
 	// setting middleware before routes, otherwise it does not work (gin bug)
 	r.Use(ginzap.GinzapWithConfig(zapLogger, &ginzap.Config{}))
 	r.Use(ginzap.RecoveryWithZap(zapLogger, true))
-	r.GET("/", handleHealthz)
-	r.POST("/", sprayProxy.HandleProxy)
+	r.GET("/proxy", handleHealthz)
+	r.POST("/proxy", sprayProxy.HandleProxy)
+
+	r.POST("/register", sprayProxy.RegisterBackends)
+	r.GET("/unregister", sprayProxy.UnregisterBackends)
+
 	r.GET("/healthz", handleHealthz)
 	return &SprayProxyServer{
 		server: r,

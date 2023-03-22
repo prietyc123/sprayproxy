@@ -38,6 +38,8 @@ spec:
           args:
             - "--secure-listen-address=0.0.0.0:8443"
             - "--upstream=http://127.0.0.1:6000/"
+            - "--upstream=http://127.0.0.1:8080/"
+            - "--ignore-paths=/proxy,/healthz"
             - "--logtostderr=true"
             - "--v=0"
           ports:
@@ -68,7 +70,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sprayproxy-metrics-service
+  name: sprayproxy-api-service
   namespace: sprayproxy
 spec:
   selector:
