@@ -46,6 +46,36 @@ func TestServerHealthz(t *testing.T) {
 	}
 }
 
+func TestServerRegister(t *testing.T) {
+	// override default logger with a nop one
+	zapLogger = zap.NewNop()
+	server, err := NewServer("localhost", 8080, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBufferString("https://test.com"))
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
+func TestServerUnregister(t *testing.T) {
+	// override default logger with a nop one
+	zapLogger = zap.NewNop()
+	server, err := NewServer("localhost", 8080, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBufferString("https://test.com"))
+	server.Handler().ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+}
+
 func TestServerAccessLog(t *testing.T) {
 	var buff bytes.Buffer
 	config := zap.NewProductionConfig()
