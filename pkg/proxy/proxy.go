@@ -49,25 +49,29 @@ func (p *SprayProxy) RegisterBackends(c *gin.Context) {
 	if !slices.Contains(p.backends, newUrl.URL) {
 		p.backends = append(p.backends, newUrl.URL)
 		c.String(http.StatusOK, "registered the backend server")
+		p.logger.Info("server registered")
 		return
 	}
 	c.String(http.StatusFound, "proxy already registered the backend url")
+	p.logger.Info("server registered")
 }
 
 func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
 	var findUrl backend
 	if err := c.ShouldBindJSON(&findUrl); err != nil {
-		p.logger.Info("backend server register request to proxy is rejected")
+		p.logger.Info("unregister request is rejected")
 		return
 	}
 	for i, backend := range p.backends {
 		if backend == findUrl.URL {
 			p.backends = append(p.backends[:i], p.backends[i+1:]...)
 			c.String(http.StatusOK, "unregistered the requested backend server: ", backend)
+			p.logger.Info("server unregistered")
 			return
 		}
 	}
 	c.String(http.StatusNotFound, "backend server not found in the list")
+	p.logger.Info("server unregistered")
 }
 
 func (p *SprayProxy) HandleProxy(c *gin.Context) {
