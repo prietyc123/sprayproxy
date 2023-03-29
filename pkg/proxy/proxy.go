@@ -59,6 +59,7 @@ func (p *SprayProxy) RegisterBackends(c *gin.Context) {
 		p.logger.Info("server registered")
 		return
 	}
+	c.String(http.StatusNotAcceptable, "Not registered, Please enable random-backends flag.")
 	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
 }
 
@@ -81,6 +82,7 @@ func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
 		p.logger.Info("server unregistered")
 		return
 	}
+	c.String(http.StatusNotAcceptable, "Not unregistered, Please enable random-backends flag.")
 	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
 }
 
