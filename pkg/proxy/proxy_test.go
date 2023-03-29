@@ -20,7 +20,7 @@ import (
 )
 
 func TestHandleProxy(t *testing.T) {
-	proxy, err := NewSprayProxy(false, zap.NewNop())
+	proxy, err := NewSprayProxy(false, false, zap.NewNop())
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -82,7 +82,7 @@ func TestProxyLog(t *testing.T) {
 		buff.Reset()
 		backend := test.NewTestServer()
 		defer backend.GetServer().Close()
-		proxy, err := NewSprayProxy(false, logger, backend.server.URL)
+		proxy, err := NewSprayProxy(false, logger, backend.GetServer().URL)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -100,7 +100,7 @@ func TestProxyLog(t *testing.T) {
 			"url": "https://test.com",
 		}
 		data, _ := json.Marshal(Data)
-		proxy, err := NewSprayProxy(false, logger)
+		proxy, err := NewSprayProxy(false, true, logger)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -119,7 +119,7 @@ func TestProxyLog(t *testing.T) {
 			"url": "https://test.com",
 		}
 		body, _ := json.Marshal(Data)
-		proxy, err := NewSprayProxy(false, logger)
+		proxy, err := NewSprayProxy(false, true, logger)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}

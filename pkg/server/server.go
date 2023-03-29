@@ -36,8 +36,8 @@ func SetLogger(logger *zap.Logger) {
 	zapLogger = logger
 }
 
-func NewServer(host string, port int, insecureSkipTLS bool, backends ...string) (*SprayProxyServer, error) {
-	sprayProxy, err := proxy.NewSprayProxy(insecureSkipTLS, zapLogger, backends...)
+func NewServer(host string, port int, insecureSkipTLS bool, randomBackends bool, backends ...string) (*SprayProxyServer, error) {
+	sprayProxy, err := proxy.NewSprayProxy(insecureSkipTLS, randomBackends, zapLogger, backends...)
 	if err != nil {
 		return nil, err
 	}

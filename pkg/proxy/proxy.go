@@ -27,51 +27,61 @@ type backend struct {
 }
 
 type SprayProxy struct {
-	backends    []string
-	insecureTLS bool
-	logger      *zap.Logger
+	backends       []string
+	insecureTLS    bool
+	randomBackends bool
+	logger         *zap.Logger
 }
 
-func NewSprayProxy(insecureTLS bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
+func NewSprayProxy(insecureTLS bool, randomBackends bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
 	return &SprayProxy{
-		backends:    backends,
-		insecureTLS: insecureTLS,
-		logger:      logger,
+		backends:       backends,
+		insecureTLS:    insecureTLS,
+		randomBackends: randomBackends,
+		logger:         logger,
 	}, nil
 }
 
 func (p *SprayProxy) RegisterBackends(c *gin.Context) {
-	var newUrl backend
-	if err := c.ShouldBindJSON(&newUrl); err != nil {
-		p.logger.Info("backend server register request to proxy is rejected")
-		return
-	}
-	if !slices.Contains(p.backends, newUrl.URL) {
-		p.backends = append(p.backends, newUrl.URL)
-		c.String(http.StatusOK, "registered the backend server")
+	if p.randomBackends {
+		var newUrl backend
+		if err := c.ShouldBindJSON(&newUrl); err != nil {
+			p.logger.Info("backend server register request to proxy is rejected")
+			return
+		}
+		if !slices.Contains(p.backends, newUrl.URL) {
+			p.backends = append(p.backends, newUrl.URL)
+			c.String(http.StatusOK, "registered the backend server")
+			p.logger.Info("server registered")
+			return
+		}
+		c.String(http.StatusFound, "proxy already registered the backend url")
 		p.logger.Info("server registered")
 		return
 	}
-	c.String(http.StatusFound, "proxy already registered the backend url")
-	p.logger.Info("server registered")
+	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
 }
 
 func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
-	var findUrl backend
-	if err := c.ShouldBindJSON(&findUrl); err != nil {
-		p.logger.Info("unregister request is rejected")
-		return
-	}
-	for i, backend := range p.backends {
-		if backend == findUrl.URL {
-			p.backends = append(p.backends[:i], p.backends[i+1:]...)
-			c.String(http.StatusOK, "unregistered the requested backend server: ", backend)
-			p.logger.Info("server unregistered")
+	if p.randomBackends {
+		var findUrl backend
+		if err := c.ShouldBindJSON(&findUrl); err != nil {
+			p.logger.Info("unregister request is rejected")
 			return
 		}
+		for i, backend := range p.backends {
+			if backend == findUrl.URL {
+				p.backends = append(p.backends[:i], p.backends[i+1:]...)
+				c.String(http.StatusOK, "unregistered the requested backend server: ", backend)
+				p.logger.Info("server unregistered")
+				return
+			}
+		}
+		c.String(http.StatusNotFound, "backend server not found in the list")
+		p.logger.Info("server unregistered")
+		return
 	}
-	c.String(http.StatusNotFound, "backend server not found in the list")
-	p.logger.Info("server unregistered")
+	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
 }
 
 func (p *SprayProxy) HandleProxy(c *gin.Context) {

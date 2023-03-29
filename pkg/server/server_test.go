@@ -19,7 +19,7 @@ import (
 func TestServerRootPost(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false)
+	server, err := NewServer("localhost", 8080, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -34,7 +34,7 @@ func TestServerRootPost(t *testing.T) {
 func TestServerHealthz(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false)
+	server, err := NewServer("localhost", 8080, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestServerHealthz(t *testing.T) {
 func TestServerRegister(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false)
+	server, err := NewServer("localhost", 8080, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestServerRegister(t *testing.T) {
 func TestServerUnregister(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false)
+	server, err := NewServer("localhost", 8080, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -87,7 +87,7 @@ func TestServerAccessLog(t *testing.T) {
 	)
 	logger := zap.New(core)
 	zapLogger = logger
-	server, err := NewServer("localhost", 8080, false)
+	server, err := NewServer("localhost", 8080, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
