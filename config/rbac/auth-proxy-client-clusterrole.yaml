@@ -11,4 +11,4 @@ rules:
   - nonResourceURLs:
       - "/register"
     verbs:
-      - create
+      - post

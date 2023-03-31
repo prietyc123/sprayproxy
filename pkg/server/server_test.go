@@ -7,6 +7,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -49,31 +50,68 @@ func TestServerHealthz(t *testing.T) {
 func TestServerRegister(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false, false)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	Data := map[string]interface{}{
+		"url": "https://test.com",
 	}
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewBufferString("https://test.com"))
-	server.Handler().ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
-	}
+	data, _ := json.Marshal(Data)
+	t.Run("Register request when dynamic-backends is unset", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		server, err := NewServer("localhost", 8080, false, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewReader(data))
+		server.Handler().ServeHTTP(w, req)
+		if w.Code != http.StatusNotAcceptable {
+			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
+		}
+	})
+	t.Run("Register request when dynamic-backends is set", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		server, err := NewServer("localhost", 8080, false, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewReader(data))
+		server.Handler().ServeHTTP(w, req)
+		if !(w.Code == http.StatusOK || w.Code == http.StatusFound) {
+			t.Errorf("expected status code %d or %d, got %d", http.StatusOK, http.StatusFound, w.Code)
+		}
+	})
 }
 
 func TestServerUnregister(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false, false)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	Data := map[string]interface{}{
+		"url": "https://test.com",
 	}
-	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBufferString("https://test.com"))
-	server.Handler().ServeHTTP(w, req)
-	if w.Code != http.StatusOK {
-		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
-	}
+	data, _ := json.Marshal(Data)
+	t.Run("Unregister request when dynamic-backends is unset", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		server, err := NewServer("localhost", 8080, false, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(data))
+		server.Handler().ServeHTTP(w, req)
+		if w.Code != http.StatusNotAcceptable {
+			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
+		}
+	})
+	t.Run("Unregister request when dynamic-backends is set", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		server, err := NewServer("localhost", 8080, false, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(data))
+		server.Handler().ServeHTTP(w, req)
+		if !(w.Code == http.StatusOK || w.Code == http.StatusNotFound) {
+			t.Errorf("expected status code %d or %d, got %d", http.StatusOK, http.StatusNotFound, w.Code)
+		}
+	})
+
 }
 
 func TestServerAccessLog(t *testing.T) {

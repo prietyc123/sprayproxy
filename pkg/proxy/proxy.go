@@ -27,63 +27,79 @@ type backend struct {
 }
 
 type SprayProxy struct {
-	backends       []string
-	insecureTLS    bool
-	randomBackends bool
-	logger         *zap.Logger
+	backends              []string
+	insecureTLS           bool
+	enableDynamicBackends bool
+	logger                *zap.Logger
 }
 
-func NewSprayProxy(insecureTLS bool, randomBackends bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
+func NewSprayProxy(insecureTLS bool, enableDynamicBackends bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
 	return &SprayProxy{
-		backends:       backends,
-		insecureTLS:    insecureTLS,
-		randomBackends: randomBackends,
-		logger:         logger,
+		backends:              backends,
+		insecureTLS:           insecureTLS,
+		enableDynamicBackends: enableDynamicBackends,
+		logger:                logger,
 	}, nil
 }
 
 func (p *SprayProxy) RegisterBackends(c *gin.Context) {
-	if p.randomBackends {
+	zapCommonFields := []zapcore.Field{
+		zap.String("method", c.Request.Method),
+		zap.String("path", c.Request.URL.Path),
+		zap.String("query", c.Request.URL.RawQuery),
+		zap.Bool("dynamic-backends", p.enableDynamicBackends),
+	}
+	if p.enableDynamicBackends {
 		var newUrl backend
 		if err := c.ShouldBindJSON(&newUrl); err != nil {
-			p.logger.Info("backend server register request to proxy is rejected")
+			c.String(http.StatusBadRequest, "please provide a valid json body")
+			p.logger.Info("backend server register request to proxy is rejected, invalid json body", zapCommonFields...)
 			return
 		}
+		zapBackendFields := append(zapCommonFields, zap.String("backend", newUrl.URL))
 		if !slices.Contains(p.backends, newUrl.URL) {
 			p.backends = append(p.backends, newUrl.URL)
 			c.String(http.StatusOK, "registered the backend server")
-			p.logger.Info("server registered")
+			p.logger.Info("server registered", zapBackendFields...)
 			return
 		}
 		c.String(http.StatusFound, "proxy already registered the backend url")
-		p.logger.Info("server registered")
+		p.logger.Info("server registered", zapBackendFields...)
 		return
 	}
-	c.String(http.StatusNotAcceptable, "Not registered, Please enable random-backends flag.")
-	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
+	c.String(http.StatusNotAcceptable, "Not registered, Please set enable-dynamic-backends flag.")
+	p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
 }
 
 func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
-	if p.randomBackends {
+	zapCommonFields := []zapcore.Field{
+		zap.String("method", c.Request.Method),
+		zap.String("path", c.Request.URL.Path),
+		zap.String("query", c.Request.URL.RawQuery),
+		zap.Bool("dynamic-backends", p.enableDynamicBackends),
+	}
+	if p.enableDynamicBackends {
 		var findUrl backend
 		if err := c.ShouldBindJSON(&findUrl); err != nil {
-			p.logger.Info("unregister request is rejected")
+			c.String(http.StatusBadRequest, "please provide a valid json body")
+			p.logger.Info("unregister request is rejected, invalid json body", zapCommonFields...)
 			return
 		}
+		zapBackendFields := append(zapCommonFields, zap.String("backend", findUrl.URL))
 		for i, backend := range p.backends {
 			if backend == findUrl.URL {
 				p.backends = append(p.backends[:i], p.backends[i+1:]...)
 				c.String(http.StatusOK, "unregistered the requested backend server: ", backend)
-				p.logger.Info("server unregistered")
+				p.logger.Info("server unregistered", zapBackendFields...)
 				return
 			}
 		}
 		c.String(http.StatusNotFound, "backend server not found in the list")
-		p.logger.Info("server unregistered")
+		p.logger.Info("server unregistered", zapBackendFields...)
 		return
 	}
-	c.String(http.StatusNotAcceptable, "Not unregistered, Please enable random-backends flag.")
-	p.logger.Error("Failed to process the request. Please enable random-backends flag.")
+	c.String(http.StatusNotAcceptable, "Not unregistered, Please set enable-dynamic-backends flag.")
+	p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
 }
 
 func (p *SprayProxy) HandleProxy(c *gin.Context) {

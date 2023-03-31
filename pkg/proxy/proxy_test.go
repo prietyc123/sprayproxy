@@ -104,7 +104,7 @@ func TestProxyLog(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewReader(data))
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(data))
 		proxy.RegisterBackends(ctx)
 		expected := `"msg":"server registered"`
 		log := buff.String()
@@ -123,7 +123,7 @@ func TestProxyLog(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/unregister", bytes.NewReader(body))
+		ctx.Request = httptest.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(body))
 		proxy.UnregisterBackends(ctx)
 		expected := `"msg":"server unregistered"`
 		log := buff.String()

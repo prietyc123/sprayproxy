@@ -34,11 +34,11 @@ sprayproxy server --backend http://localhost:8081 --backend http://localhost:808
 		port := viper.GetInt("port")
 		metricsPort := viper.GetInt("metrics-port")
 		backends := viper.GetStringSlice("backend")
-		randomBackends := viper.GetBool("random-backends")
+		enableDynamicBackends := viper.GetBool("enable-dynamic-backends")
 		insecureSkipTLSVerify := viper.GetBool("insecure-skip-tls-verify")
 		crtFile := viper.GetString("metrics-cert")
 		keyFile := viper.GetString("metrics-key")
-		server, err := server.NewServer(host, port, insecureSkipTLSVerify, randomBackends, backends...)
+		server, err := server.NewServer(host, port, insecureSkipTLSVerify, enableDynamicBackends, backends...)
 		if err != nil {
 			return err
 		}
@@ -88,7 +88,7 @@ func init() {
 	serverCmd.Flags().String("host", "", "Host for running the server. Defaults to localhost")
 	serverCmd.Flags().Int("port", 8080, "Port for running the server. Defaults to 8080")
 	serverCmd.Flags().StringSlice("backend", []string{}, "Backend to forward requests. Use more than once.")
-	serverCmd.Flags().Bool("random-backends", false, "Register and Unregister backends on the fly. Defaults to false, meaning only used for stateless deployment")
+	serverCmd.Flags().Bool("enable-dynamic-backends", false, "Register and Unregister backends on the fly. Defaults to false, meaning only used for stateless deployment")
 	serverCmd.Flags().Bool("insecure-skip-tls-verify", false, "Skip TLS verification on all backends. INSECURE - do not use in production.")
 	serverCmd.Flags().Int("metrics-port", metrics.MetricsPort, fmt.Sprintf("Port for the prometheus metrics endpoint.  Defaults to %d", metrics.MetricsPort))
 	serverCmd.Flags().String("metrics-cert", "", "TLS Certificate file for the prometheus metric endpoint.  Defaults to empty, meaning TLS will not be used")

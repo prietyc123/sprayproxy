@@ -19,7 +19,7 @@ You can also configure the proxy with environment variables:
 SPRAYPROXY_SERVER_BACKEND="http://localhost:8080 http://localhost:8081"
 ```
 
-* `SPRAYPROXY_SERVER_RANDOM_BACKENDS`: Register and Unregister backends on the fly.
+* `SPRAYPROXY_SERVER_ENABLE_DYNAMIC_BACKENDS`: Register and Unregister backends on the fly.
   **Note: this setting is for stateless deployment of the sprayproxy and should not be used in production and staging environments.**
 * `SPRAYPROXY_SERVER_INSECURE_SKIP_TLS_VERIFY`: Skip TLS verification when forwarding to backends.
   **Note: this setting is insecure and should not be used in production environments.**
