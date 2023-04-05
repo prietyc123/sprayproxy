@@ -60,7 +60,7 @@ func TestServerRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewReader(data))
+		req, _ := http.NewRequest(http.MethodPost, "/backends", bytes.NewReader(data))
 		server.Handler().ServeHTTP(w, req)
 		if w.Code != http.StatusNotAcceptable {
 			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
@@ -72,7 +72,7 @@ func TestServerRegister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		req, _ := http.NewRequest(http.MethodPost, "/register", bytes.NewReader(data))
+		req, _ := http.NewRequest(http.MethodPost, "/backends", bytes.NewReader(data))
 		server.Handler().ServeHTTP(w, req)
 		if !(w.Code == http.StatusOK || w.Code == http.StatusFound) {
 			t.Errorf("expected status code %d or %d, got %d", http.StatusOK, http.StatusFound, w.Code)
@@ -93,7 +93,7 @@ func TestServerUnregister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(data))
+		req, _ := http.NewRequest(http.MethodDelete, "/backends", bytes.NewBuffer(data))
 		server.Handler().ServeHTTP(w, req)
 		if w.Code != http.StatusNotAcceptable {
 			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
@@ -105,7 +105,7 @@ func TestServerUnregister(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		req, _ := http.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(data))
+		req, _ := http.NewRequest(http.MethodDelete, "/backends", bytes.NewBuffer(data))
 		server.Handler().ServeHTTP(w, req)
 		if !(w.Code == http.StatusOK || w.Code == http.StatusNotFound) {
 			t.Errorf("expected status code %d or %d, got %d", http.StatusOK, http.StatusNotFound, w.Code)

@@ -1,9 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: sprayproxy-metrics-reader
+  name: sprayproxy-backend-register
 rules:
   - nonResourceURLs:
-      - "/metrics"
+      - "/backends"
     verbs:
       - get
+      - post
+      - delete

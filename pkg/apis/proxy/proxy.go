@@ -19,12 +19,7 @@ import (
 	"github.com/redhat-appstudio/sprayproxy/pkg/metrics"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/exp/slices"
 )
-
-type backend struct {
-	URL string `json:"url"`
-}
 
 type SprayProxy struct {
 	backends              []string
@@ -40,66 +35,6 @@ func NewSprayProxy(insecureTLS bool, enableDynamicBackends bool, logger *zap.Log
 		enableDynamicBackends: enableDynamicBackends,
 		logger:                logger,
 	}, nil
-}
-
-func (p *SprayProxy) RegisterBackends(c *gin.Context) {
-	zapCommonFields := []zapcore.Field{
-		zap.String("method", c.Request.Method),
-		zap.String("path", c.Request.URL.Path),
-		zap.String("query", c.Request.URL.RawQuery),
-		zap.Bool("dynamic-backends", p.enableDynamicBackends),
-	}
-	if p.enableDynamicBackends {
-		var newUrl backend
-		if err := c.ShouldBindJSON(&newUrl); err != nil {
-			c.String(http.StatusBadRequest, "please provide a valid json body")
-			p.logger.Info("backend server register request to proxy is rejected, invalid json body", zapCommonFields...)
-			return
-		}
-		zapBackendFields := append(zapCommonFields, zap.String("backend", newUrl.URL))
-		if !slices.Contains(p.backends, newUrl.URL) {
-			p.backends = append(p.backends, newUrl.URL)
-			c.String(http.StatusOK, "registered the backend server")
-			p.logger.Info("server registered", zapBackendFields...)
-			return
-		}
-		c.String(http.StatusFound, "proxy already registered the backend url")
-		p.logger.Info("server registered", zapBackendFields...)
-		return
-	}
-	c.String(http.StatusNotAcceptable, "Not registered, Please set enable-dynamic-backends flag.")
-	p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
-}
-
-func (p *SprayProxy) UnregisterBackends(c *gin.Context) {
-	zapCommonFields := []zapcore.Field{
-		zap.String("method", c.Request.Method),
-		zap.String("path", c.Request.URL.Path),
-		zap.String("query", c.Request.URL.RawQuery),
-		zap.Bool("dynamic-backends", p.enableDynamicBackends),
-	}
-	if p.enableDynamicBackends {
-		var findUrl backend
-		if err := c.ShouldBindJSON(&findUrl); err != nil {
-			c.String(http.StatusBadRequest, "please provide a valid json body")
-			p.logger.Info("unregister request is rejected, invalid json body", zapCommonFields...)
-			return
-		}
-		zapBackendFields := append(zapCommonFields, zap.String("backend", findUrl.URL))
-		for i, backend := range p.backends {
-			if backend == findUrl.URL {
-				p.backends = append(p.backends[:i], p.backends[i+1:]...)
-				c.String(http.StatusOK, "unregistered the requested backend server: ", backend)
-				p.logger.Info("server unregistered", zapBackendFields...)
-				return
-			}
-		}
-		c.String(http.StatusNotFound, "backend server not found in the list")
-		p.logger.Info("server unregistered", zapBackendFields...)
-		return
-	}
-	c.String(http.StatusNotAcceptable, "Not unregistered, Please set enable-dynamic-backends flag.")
-	p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
 }
 
 func (p *SprayProxy) HandleProxy(c *gin.Context) {

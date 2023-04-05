@@ -7,7 +7,6 @@ package proxy
 
 import (
 	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -89,43 +88,6 @@ func TestProxyLog(t *testing.T) {
 		ctx.Request = httptest.NewRequest(http.MethodPost, "http://localhost:8080", bytes.NewBufferString("hello"))
 		proxy.HandleProxy(ctx)
 		expected := `"msg":"proxied request"`
-		log := buff.String()
-		if !strings.Contains(log, expected) {
-			t.Errorf("expected string %q did not appear in %q", expected, log)
-		}
-	})
-	t.Run("log 200 response while register backend server", func(t *testing.T) {
-		buff.Reset()
-		Data := map[string]interface{}{
-			"url": "https://test.com",
-		}
-		data, _ := json.Marshal(Data)
-		proxy, err := NewSprayProxy(false, true, logger)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(data))
-		proxy.RegisterBackends(ctx)
-		expected := `"msg":"server registered"`
-		log := buff.String()
-		if !strings.Contains(log, expected) {
-			t.Errorf("expected string %q did not appear in %q", expected, log)
-		}
-	})
-
-	t.Run("log 200 response while unregister backend server", func(t *testing.T) {
-		buff.Reset()
-		Data := map[string]interface{}{
-			"url": "https://test.com",
-		}
-		body, _ := json.Marshal(Data)
-		proxy, err := NewSprayProxy(false, true, logger)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(body))
-		proxy.UnregisterBackends(ctx)
-		expected := `"msg":"server unregistered"`
 		log := buff.String()
 		if !strings.Contains(log, expected) {
 			t.Errorf("expected string %q did not appear in %q", expected, log)

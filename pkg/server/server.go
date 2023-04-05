@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/redhat-appstudio/sprayproxy/pkg/apis/proxy"
 	"github.com/redhat-appstudio/sprayproxy/pkg/logger"
-	"github.com/redhat-appstudio/sprayproxy/pkg/proxy"
 )
 
 var zapLogger *zap.Logger
@@ -57,8 +57,9 @@ func NewServer(host string, port int, insecureSkipTLS bool, enableDynamicBackend
 	r.Use(ginzap.RecoveryWithZap(zapLogger, true))
 	r.GET("/proxy", handleHealthz)
 	r.POST("/proxy", sprayProxy.HandleProxy)
-	r.POST("/register", sprayProxy.RegisterBackends)
-	r.GET("/unregister", sprayProxy.UnregisterBackends)
+	r.GET("/backends", sprayProxy.GetBackends)
+	r.POST("/backends", sprayProxy.RegisterBackend)
+	r.DELETE("/backends", sprayProxy.UnregisterBackend)
 	r.GET("/healthz", handleHealthz)
 	return &SprayProxyServer{
 		server: r,

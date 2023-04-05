@@ -36,12 +36,29 @@ spec:
         - name: kube-rbac-proxy
           image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
           args:
-            - "--secure-listen-address=0.0.0.0:8443"
-            - "--upstream=http://127.0.0.1:6000/"
+            - "--secure-listen-address=0.0.0.0:9443"
             - "--upstream=http://127.0.0.1:8080/"
             - "--ignore-paths=/proxy,/healthz"
             - "--logtostderr=true"
-            - "--v=0"
+            - "--v=10"
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+              name: proxy-https
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+        - name: kube-rbac-metrics
+          image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+          args:
+            - "--secure-listen-address=0.0.0.0:8443"
+            - "--upstream=http://127.0.0.1:6000/"
+            - "--logtostderr=true"
+            - "--v=10"
           ports:
             - containerPort: 8443
               protocol: TCP
@@ -70,13 +87,28 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sprayproxy-api-service
+  name: sprayproxy-metrics-service
   namespace: sprayproxy
 spec:
   selector:
     app.kubernetes.io/name: sprayproxy
   ports:
-    - name: https
+  - name: https
+    protocol: TCP
+    port: 8443
+    targetPort: https
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-rbac-proxy
+  namespace: sprayproxy
+spec:
+  selector:
+    app.kubernetes.io/name: sprayproxy
+  ports:
+    - name: proxy-https
       protocol: TCP
-      port: 8443
+      port: 9443
       targetPort: https
