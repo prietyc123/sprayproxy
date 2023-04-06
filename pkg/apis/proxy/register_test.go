@@ -13,7 +13,32 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func TestRegisterBackendLog(t *testing.T) {
+func TestGetBackend(t *testing.T) {
+	backend1 := newTestServer()
+	defer backend1.server.Close()
+	w := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = httptest.NewRequest(http.MethodGet, "/backends", bytes.NewBufferString("hello"))
+	proxy, err := NewSprayProxy(false, true, zap.NewNop(), backend1.server.URL)
+	if err != nil {
+		t.Fatalf("failed to set up proxy: %v", err)
+	}
+	proxy.GetBackends(ctx)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+	expected := backend1.server.URL
+	responseBody := w.Body.String()
+	if !strings.Contains(responseBody, expected) {
+		t.Errorf("expected string %q did not appear in %q", expected, responseBody)
+	}
+
+	if backend1.err != nil {
+		t.Errorf("backend 1 error: %v", backend1.err)
+	}
+}
+
+func TestResiterBackendLog(t *testing.T) {
 	var buff bytes.Buffer
 	Data := map[string]interface{}{
 		"url": "https://test.com",
@@ -28,13 +53,14 @@ func TestRegisterBackendLog(t *testing.T) {
 	logger := zap.New(core)
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
+
 	t.Run("log 200 response while register backend server", func(t *testing.T) {
 		buff.Reset()
 		proxy, err := NewSprayProxy(false, true, logger)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		ctx.Request = httptest.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(body))
+		ctx.Request = httptest.NewRequest(http.MethodPost, "/backends", bytes.NewBuffer(body))
 		proxy.RegisterBackend(ctx)
 		expected := `"msg":"server registered"`
 		log := buff.String()
@@ -49,7 +75,7 @@ func TestRegisterBackendLog(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		ctx.Request = httptest.NewRequest(http.MethodGet, "/unregister", bytes.NewBuffer(body))
+		ctx.Request = httptest.NewRequest(http.MethodDelete, "/backends", bytes.NewBuffer(body))
 		proxy.UnregisterBackend(ctx)
 		expected := `"msg":"server unregistered"`
 		log := buff.String()

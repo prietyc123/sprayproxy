@@ -22,11 +22,6 @@ func (p *SprayProxy) RegisterBackend(c *gin.Context) {
 		zap.String("query", c.Request.URL.RawQuery),
 		zap.Bool("dynamic-backends", p.enableDynamicBackends),
 	}
-	if !p.enableDynamicBackends {
-		c.String(http.StatusNotAcceptable, "Not registered, Please set enable-dynamic-backends flag.")
-		p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
-		return
-	}
 	var newUrl v1alpha1.Backend
 	if err := c.ShouldBindJSON(&newUrl); err != nil {
 		c.String(http.StatusBadRequest, "please provide a valid json body")
@@ -50,11 +45,6 @@ func (p *SprayProxy) UnregisterBackend(c *gin.Context) {
 		zap.String("path", c.Request.URL.Path),
 		zap.String("query", c.Request.URL.RawQuery),
 		zap.Bool("dynamic-backends", p.enableDynamicBackends),
-	}
-	if !p.enableDynamicBackends {
-		c.String(http.StatusNotAcceptable, "Not unregistered, Please set enable-dynamic-backends flag.")
-		p.logger.Error("Failed to process the request. Please set enable-dynamic-backends flag.")
-		return
 	}
 	var unregisterUrl v1alpha1.Backend
 	if err := c.ShouldBindJSON(&unregisterUrl); err != nil {

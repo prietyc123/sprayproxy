@@ -54,7 +54,7 @@ func TestServerRegister(t *testing.T) {
 		"url": "https://test.com",
 	}
 	data, _ := json.Marshal(Data)
-	t.Run("Register request when dynamic-backends is unset", func(t *testing.T) {
+	t.Run("Register request when enable-dynamic-backends is unset", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		server, err := NewServer("localhost", 8080, false, false)
 		if err != nil {
@@ -62,11 +62,11 @@ func TestServerRegister(t *testing.T) {
 		}
 		req, _ := http.NewRequest(http.MethodPost, "/backends", bytes.NewReader(data))
 		server.Handler().ServeHTTP(w, req)
-		if w.Code != http.StatusNotAcceptable {
+		if w.Code != http.StatusNotFound {
 			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
 		}
 	})
-	t.Run("Register request when dynamic-backends is set", func(t *testing.T) {
+	t.Run("Register request when enable-dynamic-backends is set", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		server, err := NewServer("localhost", 8080, false, true)
 		if err != nil {
@@ -87,7 +87,7 @@ func TestServerUnregister(t *testing.T) {
 		"url": "https://test.com",
 	}
 	data, _ := json.Marshal(Data)
-	t.Run("Unregister request when dynamic-backends is unset", func(t *testing.T) {
+	t.Run("Unregister request when enable-dynamic-backends is unset", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		server, err := NewServer("localhost", 8080, false, false)
 		if err != nil {
@@ -95,11 +95,11 @@ func TestServerUnregister(t *testing.T) {
 		}
 		req, _ := http.NewRequest(http.MethodDelete, "/backends", bytes.NewBuffer(data))
 		server.Handler().ServeHTTP(w, req)
-		if w.Code != http.StatusNotAcceptable {
+		if w.Code != http.StatusNotFound {
 			t.Errorf("expected status code %d, got %d", http.StatusNotAcceptable, w.Code)
 		}
 	})
-	t.Run("Unregister request when dynamic-backends is set", func(t *testing.T) {
+	t.Run("Unregister request when enable-dynamic-backends is set", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		server, err := NewServer("localhost", 8080, false, true)
 		if err != nil {

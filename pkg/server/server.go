@@ -57,9 +57,11 @@ func NewServer(host string, port int, insecureSkipTLS bool, enableDynamicBackend
 	r.Use(ginzap.RecoveryWithZap(zapLogger, true))
 	r.GET("/proxy", handleHealthz)
 	r.POST("/proxy", sprayProxy.HandleProxy)
-	r.GET("/backends", sprayProxy.GetBackends)
-	r.POST("/backends", sprayProxy.RegisterBackend)
-	r.DELETE("/backends", sprayProxy.UnregisterBackend)
+	if enableDynamicBackends {
+		r.GET("/backends", sprayProxy.GetBackends)
+		r.POST("/backends", sprayProxy.RegisterBackend)
+		r.DELETE("/backends", sprayProxy.UnregisterBackend)
+	}
 	r.GET("/healthz", handleHealthz)
 	return &SprayProxyServer{
 		server: r,
