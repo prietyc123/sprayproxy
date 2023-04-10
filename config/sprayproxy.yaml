@@ -26,8 +26,6 @@ spec:
             - server
           env:
             - name: SPRAYPROXY_SERVER_BACKEND
-            - name: SPRAYPROXY_SERVER_HOST
-              value: 127.0.0.1
           ports:
             - containerPort: 8080
               name: server

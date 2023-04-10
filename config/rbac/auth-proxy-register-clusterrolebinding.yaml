@@ -8,5 +8,5 @@ roleRef:
   name: sprayproxy-backend-register
 subjects:
   - kind: ServiceAccount
-    name: default
+    name: sprayproxy
     namespace: sprayproxy
