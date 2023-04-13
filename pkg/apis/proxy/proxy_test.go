@@ -19,7 +19,7 @@ import (
 )
 
 func TestHandleProxy(t *testing.T) {
-	proxy, err := NewSprayProxy(false, false, zap.NewNop())
+	proxy, err := NewSprayProxy(false, false, zap.NewNop(), nil)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -41,11 +41,14 @@ func TestHandleProxyMultiBackend(t *testing.T) {
 	defer backend1.GetServer().Close()
 	backend2 := test.NewTestServer()
 	defer backend2.GetServer().Close()
-
+	testBackend := map[string]string{
+		backend1.GetServer().URL: "",
+		backend2.GetServer().URL: "",
+	}
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = httptest.NewRequest(http.MethodPost, "http://localhost:8080", bytes.NewBufferString("hello world!"))
-	proxy, err := NewSprayProxy(false, zap.NewNop(), backend1.GetServer().URL, backend2.GetServer().URL)
+	proxy, err := NewSprayProxy(false, false, zap.NewNop(), testBackend)
 	if err != nil {
 		t.Fatalf("failed to set up proxy: %v", err)
 	}
@@ -81,7 +84,10 @@ func TestProxyLog(t *testing.T) {
 		buff.Reset()
 		backend := test.NewTestServer()
 		defer backend.GetServer().Close()
-		proxy, err := NewSprayProxy(false, logger, backend.GetServer().URL)
+		testBackend := map[string]string{
+			backend.GetServer().URL: "",
+		}
+		proxy, err := NewSprayProxy(false, false, logger, testBackend)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}

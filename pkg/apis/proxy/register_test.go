@@ -16,10 +16,13 @@ import (
 func TestGetBackend(t *testing.T) {
 	backend1 := newTestServer()
 	defer backend1.server.Close()
+	testBackend := map[string]string{
+		backend1.server.URL: "",
+	}
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 	ctx.Request = httptest.NewRequest(http.MethodGet, "/backends", bytes.NewBufferString("hello"))
-	proxy, err := NewSprayProxy(false, true, zap.NewNop(), backend1.server.URL)
+	proxy, err := NewSprayProxy(false, true, zap.NewNop(), testBackend)
 	if err != nil {
 		t.Fatalf("failed to set up proxy: %v", err)
 	}
@@ -38,7 +41,7 @@ func TestGetBackend(t *testing.T) {
 	}
 }
 
-func TestResiterBackendLog(t *testing.T) {
+func TestRegisterBackendLog(t *testing.T) {
 	var buff bytes.Buffer
 	Data := map[string]interface{}{
 		"url": "https://test.com",
@@ -56,7 +59,7 @@ func TestResiterBackendLog(t *testing.T) {
 
 	t.Run("log 200 response while register backend server", func(t *testing.T) {
 		buff.Reset()
-		proxy, err := NewSprayProxy(false, true, logger)
+		proxy, err := NewSprayProxy(false, true, logger, nil)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
@@ -71,7 +74,12 @@ func TestResiterBackendLog(t *testing.T) {
 
 	t.Run("log 200 response while unregister backend server", func(t *testing.T) {
 		buff.Reset()
-		proxy, err := NewSprayProxy(false, true, logger)
+		backend1 := newTestServer()
+		defer backend1.server.Close()
+		testBackend := map[string]string{
+			backend1.server.URL: "",
+		}
+		proxy, err := NewSprayProxy(false, true, logger, testBackend)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}

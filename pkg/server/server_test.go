@@ -20,12 +20,12 @@ import (
 func TestServerRootPost(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false, false)
+	server, err := NewServer("localhost", 8080, false, false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest(http.MethodPost, "/proxy", bytes.NewBufferString("hello"))
+	req, _ := http.NewRequest(http.MethodPost, "/", bytes.NewBufferString("hello"))
 	server.Handler().ServeHTTP(w, req)
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
@@ -35,7 +35,7 @@ func TestServerRootPost(t *testing.T) {
 func TestServerHealthz(t *testing.T) {
 	// override default logger with a nop one
 	zapLogger = zap.NewNop()
-	server, err := NewServer("localhost", 8080, false, false)
+	server, err := NewServer("localhost", 8080, false, false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestServerRegister(t *testing.T) {
 	data, _ := json.Marshal(Data)
 	t.Run("Register request when enable-dynamic-backends is unset", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		server, err := NewServer("localhost", 8080, false, false)
+		server, err := NewServer("localhost", 8080, false, false, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -68,7 +68,7 @@ func TestServerRegister(t *testing.T) {
 	})
 	t.Run("Register request when enable-dynamic-backends is set", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		server, err := NewServer("localhost", 8080, false, true)
+		server, err := NewServer("localhost", 8080, false, true, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -89,7 +89,7 @@ func TestServerUnregister(t *testing.T) {
 	data, _ := json.Marshal(Data)
 	t.Run("Unregister request when enable-dynamic-backends is unset", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		server, err := NewServer("localhost", 8080, false, false)
+		server, err := NewServer("localhost", 8080, false, false, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -101,7 +101,7 @@ func TestServerUnregister(t *testing.T) {
 	})
 	t.Run("Unregister request when enable-dynamic-backends is set", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		server, err := NewServer("localhost", 8080, false, true)
+		server, err := NewServer("localhost", 8080, false, true, nil)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -125,7 +125,7 @@ func TestServerAccessLog(t *testing.T) {
 	)
 	logger := zap.New(core)
 	zapLogger = logger
-	server, err := NewServer("localhost", 8080, false, false)
+	server, err := NewServer("localhost", 8080, false, false, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

@@ -22,13 +22,13 @@ import (
 )
 
 type SprayProxy struct {
-	backends              []string
+	backends              map[string]string
 	insecureTLS           bool
 	enableDynamicBackends bool
 	logger                *zap.Logger
 }
 
-func NewSprayProxy(insecureTLS bool, enableDynamicBackends bool, logger *zap.Logger, backends ...string) (*SprayProxy, error) {
+func NewSprayProxy(insecureTLS bool, enableDynamicBackends bool, logger *zap.Logger, backends map[string]string) (*SprayProxy, error) {
 	return &SprayProxy{
 		backends:              backends,
 		insecureTLS:           insecureTLS,
@@ -68,7 +68,7 @@ func (p *SprayProxy) HandleProxy(c *gin.Context) {
 		}
 	}
 
-	for _, backend := range p.backends {
+	for backend, _ := range p.backends {
 		backendURL, err := url.Parse(backend)
 		if err != nil {
 			p.logger.Error("failed to parse backend "+err.Error(), zapCommonFields...)
@@ -143,7 +143,11 @@ func (p *SprayProxy) HandleProxy(c *gin.Context) {
 }
 
 func (p *SprayProxy) Backends() []string {
-	return p.backends
+	backends := []string{}
+	for b, _ := range p.backends {
+		backends = append(backends, b)
+	}
+	return backends
 }
 
 // InsecureSkipTLSVerify indicates if the proxy is skipping TLS verification.

@@ -30,15 +30,20 @@ sprayproxy server --backend http://localhost:8081 --backend http://localhost:808
 	`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		viper.AutomaticEnv()
+		backends := make(map[string]string)
 		host := viper.GetString("host")
 		port := viper.GetInt("port")
 		metricsPort := viper.GetInt("metrics-port")
-		backends := viper.GetStringSlice("backend")
+		backendSlice := viper.GetStringSlice("backend")
+		// backendSlice values into map
+		for _, b := range backendSlice {
+			backends[b] = ""
+		}
 		enableDynamicBackends := viper.GetBool("enable-dynamic-backends")
 		insecureSkipTLSVerify := viper.GetBool("insecure-skip-tls-verify")
 		crtFile := viper.GetString("metrics-cert")
 		keyFile := viper.GetString("metrics-key")
-		server, err := server.NewServer(host, port, insecureSkipTLSVerify, enableDynamicBackends, backends...)
+		server, err := server.NewServer(host, port, insecureSkipTLSVerify, enableDynamicBackends, backends)
 		if err != nil {
 			return err
 		}

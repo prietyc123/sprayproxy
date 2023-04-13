@@ -1,14 +1,13 @@
 package proxy
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redhat-appstudio/sprayproxy/pkg/apis/proxy/v1alpha1"
-	"github.com/redhat-appstudio/sprayproxy/pkg/backends"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/exp/slices"
 )
 
 func (p *SprayProxy) GetBackends(c *gin.Context) {
@@ -29,8 +28,12 @@ func (p *SprayProxy) RegisterBackend(c *gin.Context) {
 		return
 	}
 	zapBackendFields := append(zapCommonFields, zap.String("backend", newUrl.URL))
-	if !slices.Contains(p.backends, newUrl.URL) {
-		p.backends = append(p.backends, newUrl.URL)
+	if _, ok := p.backends[newUrl.URL]; !ok {
+		if p.backends == nil {
+			p.backends = map[string]string{}
+		}
+		p.backends[newUrl.URL] = ""
+		fmt.Println("hello ", p.backends)
 		c.String(http.StatusOK, "registered the backend server")
 		p.logger.Info("server registered", zapBackendFields...)
 		return
@@ -53,12 +56,17 @@ func (p *SprayProxy) UnregisterBackend(c *gin.Context) {
 		return
 	}
 	zapBackendFields := append(zapCommonFields, zap.String("backend", unregisterUrl.URL))
-	_, ok := backends.DeleteBackend(p.backends, unregisterUrl.URL)
-	if !ok {
+	if p.backends == nil {
+		c.String(http.StatusNotFound, "Backend list is empty")
+		p.logger.Info("server unregistered", zapBackendFields...)
+		return
+	}
+	if _, ok := p.backends[unregisterUrl.URL]; !ok {
 		c.String(http.StatusNotFound, "backend server not found in the list")
 		p.logger.Info("server unregistered", zapBackendFields...)
 		return
 	}
+	delete(p.backends, unregisterUrl.URL)
 	c.String(http.StatusOK, "unregistered the requested backend server: ", unregisterUrl.URL)
 	p.logger.Info("server unregistered", zapBackendFields...)
 }

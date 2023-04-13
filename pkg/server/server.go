@@ -36,8 +36,8 @@ func SetLogger(logger *zap.Logger) {
 	zapLogger = logger
 }
 
-func NewServer(host string, port int, insecureSkipTLS bool, enableDynamicBackends bool, backends ...string) (*SprayProxyServer, error) {
-	sprayProxy, err := proxy.NewSprayProxy(insecureSkipTLS, enableDynamicBackends, zapLogger, backends...)
+func NewServer(host string, port int, insecureSkipTLS bool, enableDynamicBackends bool, backends map[string]string) (*SprayProxyServer, error) {
+	sprayProxy, err := proxy.NewSprayProxy(insecureSkipTLS, enableDynamicBackends, zapLogger, backends)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func NewServer(host string, port int, insecureSkipTLS bool, enableDynamicBackend
 		}),
 	}))
 	r.Use(ginzap.RecoveryWithZap(zapLogger, true))
-	r.GET("/proxy", handleHealthz)
-	r.POST("/proxy", sprayProxy.HandleProxy)
+	r.GET("/", handleHealthz)
+	r.POST("/", sprayProxy.HandleProxy)
 	if enableDynamicBackends {
 		r.GET("/backends", sprayProxy.GetBackends)
 		r.POST("/backends", sprayProxy.RegisterBackend)
