@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -33,7 +32,6 @@ func (p *SprayProxy) RegisterBackend(c *gin.Context) {
 			p.backends = map[string]string{}
 		}
 		p.backends[newUrl.URL] = ""
-		fmt.Println("hello ", p.backends)
 		c.String(http.StatusOK, "registered the backend server")
 		p.logger.Info("server registered", zapBackendFields...)
 		return
