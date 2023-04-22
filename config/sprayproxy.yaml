@@ -106,7 +106,7 @@ spec:
   selector:
     app.kubernetes.io/name: sprayproxy
   ports:
-  - name: https
-    protocol: TCP
-    port: 8443
-    targetPort: https
+    - name: https
+      protocol: TCP
+      port: 8443
+      targetPort: https
