@@ -9,15 +9,16 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redhat-appstudio/sprayproxy/test"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func TestGetBackend(t *testing.T) {
-	backend1 := newTestServer()
-	defer backend1.server.Close()
+	backend1 := test.NewTestServer()
+	defer backend1.GetServer().Close()
 	testBackend := map[string]string{
-		backend1.server.URL: "",
+		backend1.GetServer().URL: "",
 	}
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
@@ -30,14 +31,14 @@ func TestGetBackend(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	expected := backend1.server.URL
+	expected := backend1.GetServer().URL
 	responseBody := w.Body.String()
 	if !strings.Contains(responseBody, expected) {
 		t.Errorf("expected string %q did not appear in %q", expected, responseBody)
 	}
 
-	if backend1.err != nil {
-		t.Errorf("backend 1 error: %v", backend1.err)
+	if backend1.GetError() != nil {
+		t.Errorf("backend 1 error: %v", backend1.GetError())
 	}
 }
 
@@ -74,10 +75,10 @@ func TestRegisterBackendLog(t *testing.T) {
 
 	t.Run("log 200 response while unregister backend server", func(t *testing.T) {
 		buff.Reset()
-		backend1 := newTestServer()
-		defer backend1.server.Close()
+		backend1 := test.NewTestServer()
+		defer backend1.GetServer().Close()
 		testBackend := map[string]string{
-			backend1.server.URL: "",
+			backend1.GetServer().URL: "",
 		}
 		proxy, err := NewSprayProxy(false, true, logger, testBackend)
 		if err != nil {

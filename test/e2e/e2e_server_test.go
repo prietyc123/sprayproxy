@@ -32,7 +32,10 @@ func TestLogRequestId(t *testing.T) {
 	server.SetLogger(logger)
 	backend := test.NewTestServer()
 	defer backend.GetServer().Close()
-	server, err := server.NewServer("localhost", 8080, false, backend.GetServer().URL)
+	testBackend := map[string]string{
+		backend.GetServer().URL: "",
+	}
+	server, err := server.NewServer("localhost", 8080, false, false, testBackend)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
