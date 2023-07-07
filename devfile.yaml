@@ -1,0 +1,50 @@
+schemaVersion: 2.2.0
+metadata:
+  name: sprayproxy
+  displayName: "Spray proxy"
+  description: 'This is Pritis sprayprxy'
+  icon: https://raw.githubusercontent.com/devfile-samples/devfile-stack-icons/main/golang.svg
+  language: Go
+  projectType: Go
+  tags:
+    - Go
+  version: 1.1.0
+  provider: Red Hat
+  supportUrl: https://github.com/devfile-samples/devfile-support#support-information
+  # attributes:
+  #   alpha.dockerimage-port: 8081
+parent:
+  id: go
+  registryUrl: 'https://registry.devfile.io'
+components:
+  - name: image-build
+    image:
+      imageName: pkumari-sprayproxy:latest
+      dockerfile:
+        uri: Dockerfile
+        buildContext: .
+        rootRequired: false
+  - name: kubernetes-deploy
+    attributes:
+      deployment/replicas: 1
+      deployment/cpuLimit: '100m'
+      deployment/cpuRequest: 10m
+      deployment/memoryLimit: 100Mi
+      deployment/memoryRequest: 10Mi
+    kubernetes:
+      uri: config/deploy.yaml
+commands:
+  - id: build-image
+    apply:
+      component: image-build
+  - id: deployk8s
+    apply:
+      component: kubernetes-deploy
+  - id: deploy
+    composite:
+      commands:
+        - build-image
+        - deployk8s
+      group:
+        kind: deploy
+        isDefault: true

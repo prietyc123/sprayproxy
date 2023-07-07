@@ -1,0 +1,205 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sprayproxy
+  namespace: pkumari-tenant
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sprayproxy-metrics-reader
+rules:
+  - nonResourceURLs:
+      - "/metrics"
+    verbs:
+      - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sprayproxy-backend-register
+rules:
+  - nonResourceURLs:
+      - "/backends"
+    verbs:
+      - get
+      - create
+      - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sprayproxy-backend-register-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sprayproxy-backend-register
+subjects:
+  - kind: ServiceAccount
+    name: sprayproxy
+    namespace: pkumari-tenant
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rbac-proxy-role
+rules:
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rbac-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rbac-proxy-role
+subjects:
+  - kind: ServiceAccount
+    name: sprayproxy
+    namespace: pkumari-tenant
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sprayproxy
+  namespace: pkumari-tenant
+  labels:
+    app.kubernetes.io/name: sprayproxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: sprayproxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: sprayproxy
+    spec:
+      serviceAccountName: sprayproxy
+      volumes:
+        - name: tls
+          secret:
+            secretName: sprayproxy-tls
+            defaultMode: 420
+      containers:
+        - name: sprayproxy
+          image: ko://github.com/redhat-appstudio/sprayproxy
+          args:
+            - server
+          env:
+            - name: SPRAYPROXY_SERVER_BACKEND
+            - name: SPRAYPROXY_SERVER_ENABLE_DYNAMIC_BACKENDS
+              value: "true"
+            - name: SPRAYPROXY_SERVER_INSECURE_SKIP_WEBHOOK_VERIFY
+              value: "true"
+          ports:
+            - containerPort: 8080
+              name: server
+          resources:
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+        - name: kube-rbac-proxy
+          image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+          args:
+            - "--secure-listen-address=0.0.0.0:9443"
+            - "--upstream=http://127.0.0.1:8080/"
+            - "--ignore-paths=/proxy,/healthz"
+            - "--logtostderr=true"
+            - "--v=10"
+            - '--tls-cert-file=/etc/tls/tls.crt'
+            - '--tls-private-key-file=/etc/tls/tls.key'
+          ports:
+            - containerPort: 9443
+              protocol: TCP
+              name: proxy-https
+          volumeMounts:
+            - name: tls
+              readOnly: true
+              mountPath: /etc/tls
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+        - name: kube-rbac-metrics
+          image: registry.redhat.io/openshift4/ose-kube-rbac-proxy:v4.12
+          args:
+            - "--secure-listen-address=0.0.0.0:8443"
+            - "--upstream=http://127.0.0.1:6000/"
+            - "--logtostderr=true"
+            - "--v=10"
+          ports:
+            - containerPort: 8443
+              protocol: TCP
+              name: https
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 5m
+              memory: 64Mi
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: sprayproxy-service
+  namespace: pkumari-tenant
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: sprayproxy-tls
+spec:
+  selector:
+    app.kubernetes.io/name: sprayproxy
+  ports:
+    - name: proxy-https
+      protocol: TCP
+      port: 9443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sprayproxy-metrics-service
+  namespace: pkumari-tenant
+spec:
+  selector:
+    app.kubernetes.io/name: sprayproxy
+  ports:
+    - name: https
+      protocol: TCP
+      port: 8443
+      targetPort: https
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: sprayproxy-route
+  namespace: pkumari-tenant
+  annotations:
+    haproxy.router.openshift.io/hsts_header: "max-age=63072000"
+spec:
+  tls:
+    termination: reencrypt 
+    insecureEdgeTerminationPolicy: Redirect
+  to:
+    kind: Service
+    name: sprayproxy-service
